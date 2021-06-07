@@ -789,6 +789,7 @@ class SpecialTokensMixin:
         self._cls_token = None
         self._mask_token = None
         self._pad_token_type_id = 0
+        self._pad_entity_relation_type_id = 0
         self._additional_special_tokens = []
         self.verbose = verbose
 
@@ -1117,6 +1118,13 @@ class SpecialTokensMixin:
         :obj:`int`: Id of the padding token type in the vocabulary.
         """
         return self._pad_token_type_id
+
+    @property
+    def pad_entity_relation_type_id(self) -> int:
+        """
+        :obj:`int`: Id of the padding token entity/relation type in the vocabulary.
+        """
+        return self._pad_entity_relation_type_id
 
     @property
     def cls_token_id(self) -> Optional[int]:
@@ -2989,6 +2997,10 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
                     )
                 if "special_tokens_mask" in encoded_inputs:
                     encoded_inputs["special_tokens_mask"] = encoded_inputs["special_tokens_mask"] + [1] * difference
+                if "entity_relation_type_ids" in encoded_inputs:
+                    encoded_inputs["entity_relation_type_ids"] = (
+                        encoded_inputs["entity_relation_type_ids"] + [self.pad_entity_relation_type_id] * difference
+                    )
                 encoded_inputs[self.model_input_names[0]] = required_input + [self.pad_token_id] * difference
             elif self.padding_side == "left":
                 if return_attention_mask:
@@ -2999,6 +3011,10 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
                     ]
                 if "special_tokens_mask" in encoded_inputs:
                     encoded_inputs["special_tokens_mask"] = [1] * difference + encoded_inputs["special_tokens_mask"]
+                if "entity_relation_type_ids" in encoded_inputs:
+                    encoded_inputs["entity_relation_type_ids"] = [self.pad_entity_relation_type_id] * difference + encoded_inputs[
+                        "entity_relation_type_ids"
+                    ]
                 encoded_inputs[self.model_input_names[0]] = [self.pad_token_id] * difference + required_input
             else:
                 raise ValueError("Invalid padding strategy:" + str(self.padding_side))
