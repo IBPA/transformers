@@ -204,15 +204,19 @@ class BertEmbeddings(nn.Module):
         if token_type_ids is None:
             token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=self.position_ids.device)
 
-        if entity_relation_type_ids is None:
-            entity_relation_type_ids = torch.zeros(input_shape, dtype=torch.long, device=self.position_ids.device)
-
         if inputs_embeds is None:
             inputs_embeds = self.word_embeddings(input_ids)
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
-        entity_relation_type_embeddings = self.entity_relation_type_embeddings(entity_relation_type_ids)
 
-        embeddings = inputs_embeds + token_type_embeddings + entity_relation_type_embeddings
+        embeddings = inputs_embeds + token_type_embeddings
+
+        if entity_relation_type_ids is None:
+            logger.info(f'{self.forward.__qualname__}: Entity/relation type IDs is None.')
+        else:
+            logger.info(f'{self.forward.__qualname__}: Adding entity/relation type IDs.')
+            entity_relation_type_embeddings = self.entity_relation_type_embeddings(entity_relation_type_ids)
+            embeddings += entity_relation_type_embeddings
+
         if self.position_embedding_type == "absolute":
             position_embeddings = self.position_embeddings(position_ids)
             embeddings += position_embeddings
@@ -951,7 +955,7 @@ class BertModel(BertPreTrainedModel):
         if token_type_ids is None:
             token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
         if entity_relation_type_ids is None:
-            entity_relation_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
+            logger.info(f'{self.forward.__qualname__}: Entity/relation type IDs is None.')
 
         # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
         # ourselves in which case we just need to make it broadcastable to all heads.
