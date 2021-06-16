@@ -210,7 +210,7 @@ class BertEmbeddings(nn.Module):
 
         embeddings = inputs_embeds + token_type_embeddings
 
-        if entity_relation_type_ids:
+        if entity_relation_type_ids is not None:
             entity_relation_type_embeddings = self.entity_relation_type_embeddings(entity_relation_type_ids)
             embeddings += entity_relation_type_embeddings
 
