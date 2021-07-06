@@ -77,6 +77,7 @@ class RobertaEmbeddings(nn.Module):
         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=config.pad_token_id)
         self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
         self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
+        self.entity_relation_type_embeddings = nn.Embedding(config.entity_relation_type_vocab_size, config.hidden_size)
 
         # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
         # any TensorFlow checkpoint file
@@ -94,7 +95,13 @@ class RobertaEmbeddings(nn.Module):
         )
 
     def forward(
-        self, input_ids=None, token_type_ids=None, position_ids=None, inputs_embeds=None, past_key_values_length=0
+        self,
+        input_ids=None,
+        token_type_ids=None,
+        entity_relation_type_ids=None,
+        position_ids=None,
+        inputs_embeds=None,
+        past_key_values_length=0
     ):
         if position_ids is None:
             if input_ids is not None:
@@ -118,6 +125,11 @@ class RobertaEmbeddings(nn.Module):
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
 
         embeddings = inputs_embeds + token_type_embeddings
+
+        if entity_relation_type_ids is not None:
+            entity_relation_type_embeddings = self.entity_relation_type_embeddings(entity_relation_type_ids)
+            embeddings += entity_relation_type_embeddings
+
         if self.position_embedding_type == "absolute":
             position_embeddings = self.position_embeddings(position_ids)
             embeddings += position_embeddings
@@ -721,6 +733,7 @@ class RobertaModel(RobertaPreTrainedModel):
         attention_mask=None,
         token_type_ids=None,
         position_ids=None,
+        entity_relation_type_ids=None,
         head_mask=None,
         inputs_embeds=None,
         encoder_hidden_states=None,
@@ -782,6 +795,8 @@ class RobertaModel(RobertaPreTrainedModel):
             attention_mask = torch.ones(((batch_size, seq_length + past_key_values_length)), device=device)
         if token_type_ids is None:
             token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
+        if entity_relation_type_ids is None:
+            pass
 
         # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
         # ourselves in which case we just need to make it broadcastable to all heads.
@@ -809,6 +824,7 @@ class RobertaModel(RobertaPreTrainedModel):
             input_ids=input_ids,
             position_ids=position_ids,
             token_type_ids=token_type_ids,
+            entity_relation_type_ids=entity_relation_type_ids,
             inputs_embeds=inputs_embeds,
             past_key_values_length=past_key_values_length,
         )
@@ -1027,6 +1043,7 @@ class RobertaForMaskedLM(RobertaPreTrainedModel):
         attention_mask=None,
         token_type_ids=None,
         position_ids=None,
+        entity_relation_type_ids=None,
         head_mask=None,
         inputs_embeds=None,
         encoder_hidden_states=None,
@@ -1051,6 +1068,7 @@ class RobertaForMaskedLM(RobertaPreTrainedModel):
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
             position_ids=position_ids,
+            entity_relation_type_ids=entity_relation_type_ids,
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             encoder_hidden_states=encoder_hidden_states,
@@ -1136,6 +1154,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         input_ids=None,
         attention_mask=None,
         token_type_ids=None,
+        entity_relation_type_ids=None,
         position_ids=None,
         head_mask=None,
         inputs_embeds=None,
@@ -1156,6 +1175,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
             input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
+            entity_relation_type_ids=entity_relation_type_ids,
             position_ids=position_ids,
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
